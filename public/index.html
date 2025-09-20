@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lễ Tốt nghiệp - Terminal Style</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .terminal {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .ascii-art {
+            font-size: 8px;
+            line-height: 1;
+            white-space: pre;
+            margin-bottom: 20px;
+            color: #00ff00;
+        }
+
+        .command-line {
+            margin: 10px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .prompt {
+            color: #ffff00;
+            display: inline;
+        }
+
+        .command {
+            color: #00ffff;
+        }
+
+        .output {
+            margin: 10px 0 20px 0;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        .success {
+            color: #00ff00;
+        }
+
+        .info {
+            color: #00aaff;
+        }
+
+        .warning {
+            color: #ff9900;
+        }
+
+        .event-details {
+            background: #111;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 20px;
+            width: 30px;
+        }
+
+        .label {
+            font-weight: bold;
+            min-width: 80px;
+        }
+
+        .value {
+            color: #ffffff;
+        }
+
+        .map-link {
+            color: #00ffff;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .map-link:hover {
+            color: #ffff00;
+        }
+
+        .button {
+            background: #001100;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            font-family: inherit;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 10px 5px;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+
+        .decline-btn {
+            background: #110000 !important;
+            border-color: #ff0000 !important;
+            color: #ff0000 !important;
+        }
+
+        .decline-btn:hover {
+            background: #ff0000 !important;
+            color: #000 !important;
+            animation: shake 0.5s;
+        }
+
+        .stolen-btn {
+            position: absolute !important;
+            pointer-events: none !important;
+            opacity: 0.5 !important;
+            transform: translateX(200px) !important;
+            transition: all 0.3s ease !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .terminal-warning {
+            background: #220000;
+            border-left: 4px solid #ff0000;
+            padding: 10px;
+            margin: 10px 0;
+            animation: blink-red 1s infinite;
+        }
+
+        @keyframes blink-red {
+            0%, 50% { background: #220000; }
+            51%, 100% { background: #330000; }
+        }
+
+        .guestbook {
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .guestbook input {
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: inherit;
+            border-radius: 3px;
+        }
+
+        .guestbook input:focus,
+        .guestbook textarea:focus {
+            outline: none;
+            border-color: #ffff00;
+            box-shadow: 0 0 5px #00ff00;
+        }
+
+        .typing {
+            display: inline-block;
+            animation: typing 3s steps(30) 1s forwards, blink 1s infinite;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 2px solid #00ff00;
+            width: 0;
+        }
+
+        @keyframes typing {
+            to { width: 100%; }
+        }
+
+        @keyframes blink {
+            0%, 50% { border-color: #00ff00; }
+            51%, 100% { border-color: transparent; }
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .command-line:nth-child(1) { animation-delay: 0s; }
+        .command-line:nth-child(2) { animation-delay: 1s; }
+        .command-line:nth-child(3) { animation-delay: 2s; }
+        .command-line:nth-child(4) { animation-delay: 3s; }
+        .command-line:nth-child(5) { animation-delay: 4s; }
+        .output:nth-child(6) { animation-delay: 5s; }
+
+        @media (max-width: 600px) {
+            .ascii-art {
+                font-size: 6px;
+            }
+            
+            body {
+                padding: 10px;
+                font-size: 12px;
+            }
+            
+            .event-details {
+                padding: 15px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="ascii-art">
+ ____  ___  __      __  ___   ____  __  ____ _________  ____   ____  
+/  _ \|   ||  |__  |  ||   \ |    \|  ||  __|_   _|_  \|    \ /    | 
+|  | ||   ||  ___| |  ||    \|  D  )  ||  _|  | |   | ||  D  )   __| 
+|  |_||___||  |    |  ||  D  |    /|  ||  |   | |   | ||    /|  |_  
+|     |    |__|    |__||_____|___|_|__||__|   |_|   |_||___|_\|_____|
+        </div>
+
+        <div class="command-line">
+            <span class="prompt">$ </span>
+            <span class="command typing">./graduation.sh --ceremony="Class of 2025"</span>
+        </div>
+
+        <div class="command-line">
+            <span class="prompt">[] </span>
+            <span class="info">INFO</span>
+        </div>
+
+        <div class="command-line">
+            <span class="success">Đăng nhập thành công!</span>
+        </div>
+
+        <div class="command-line">
+            <span class="prompt">[] </span>
+            <span class="success">SUCCESS</span>
+        </div>
+
+        <div class="output">
+            <h2 style="color: #ffff00; margin-bottom: 20px;">Thân mời bạn đến tham dự:</h2>
+            <h1 style="color: #00ffff; margin-bottom: 30px; font-size: 24px;">Lễ Tốt nghiệp của TNM</h1>
+            
+            <div class="event-details">
+                <div class="detail-row">
+                    <span class="icon">📅</span>
+                    <span class="label">Thời gian:</span>
+                    <div class="value">
+                        <div>09:30 - 11:00</div>
+                        <div>27/09/2025</div>
+                    </div>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="icon">📍</span>
+                    <span class="label">Địa điểm:</span>
+                    <div class="value">
+                        <div>Hội trường C2</div>
+                        <div>Đại học Bách khoa Hà Nội</div>
+                        <div><a href="https://maps.google.com" class="map-link">Click để mở Google Maps</a></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <p style="color: #ffff00;">Nhấn "Đồng ý" và viết lưu bút cho mình bên dưới nhé!</p>
+            </div>
+
+            <div class="buttons">
+                <button class="button" onclick="confirmAttendance()">Đồng ý tham dự</button>
+                <button class="button decline-btn" id="declineBtn" onclick="declineAttendance()">Từ chối</button>
+            </div>
+
+            <div class="warning" style="margin-top: 20px;">
+                <h3>Lưu ý:</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>Hãy đứng chờ mình quanh quảng trường C1 và gọi điện thoại để biết mình ở đâu nhé.</li>
+                    <li>Mình sẽ share link vị trí trực tiếp của mình ở đây vào buổi lễ tốt nghiệp nha.</li>
+                </ul>
+            </div>
+
+            <div class="guestbook" id="guestbook" style="display: none;">
+                <h3 style="color: #00ffff; margin-bottom: 15px;">📝 Lưu bút cho TNM</h3>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ffff00; display: block; margin-bottom: 5px;">TÊN CỦA BAN:</label>
+                    <input type="text" id="guestName" placeholder="Nhập tên của ban" style="width: 100%; padding: 8px; background: #000; border: 1px solid #00ff00; color: #00ff00; font-family: inherit;">
+                </div>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="color: #ffff00; display: block; margin-bottom: 5px;">NHẬP LỜI NHẮN:</label>
+                    <textarea id="guestMessage" placeholder="Nhập lời nhắn cho TNM..." style="width: 100%; height: 100px; background: #000; border: 1px solid #00ff00; color: #00ff00; font-family: inherit; padding: 10px; resize: vertical;"></textarea>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button class="button" onclick="submitGuestbook()">GỬI</button>
+                    <button class="button" style="background: #331100; border-color: #ff6600; color: #ff6600;" onclick="cancelGuestbook()">HỦY</button>
+                </div>
+            </div>
+
+            <div class="command-line" style="margin-top: 30px;">
+                <span class="prompt">$ </span>
+                <span class="command">rsvp --confirm --guests=1</span>
+                <span style="animation: blink 1s infinite;">_</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let declineAttempts = 0;
+        let buttonThiefActive = false;
+
+        function confirmAttendance() {
+            // Reset decline button if it was stolen
+            const declineBtn = document.getElementById('declineBtn');
+            declineBtn.classList.remove('stolen-btn');
+            declineBtn.style.display = 'inline-block';
+            
+            // Hiện form guestbook sau khi nhấn đồng ý
+            document.getElementById('guestbook').style.display = 'block';
+            
+            // Scroll xuống form
+            document.getElementById('guestbook').scrollIntoView({ behavior: 'smooth' });
+            
+            // Thay đổi nội dung thông báo
+            const rsvpSection = document.querySelector('.command-line:last-child');
+            rsvpSection.innerHTML = '<span class="prompt">$ </span><span class="command">rsvp --confirm --guests=1</span>';
+        }
+
+        function declineAttendance() {
+            declineAttempts++;
+            const terminal = document.querySelector('.terminal');
+            const declineBtn = document.getElementById('declineBtn');
+            
+            // Create warning messages
+            const warnings = [
+                '🚨 ALERT: Decline button has been STOLEN! 🚨',
+                '⚠️ A sketchy figure is running away with the decline button!',
+                '🏃 *running sounds* 🔊',
+                '⚠️ The thief is getting away! 🏃💨',
+                '⚠️ Button thief is almost gone! 🏃💨💨',
+                '🔍 Police report: Button thief escaped!',
+                '✅ A new decline button has been deployed!',
+                '⚠️ WARNING: This button may also be stolen! 😂'
+            ];
+
+            if (declineAttempts === 1) {
+                // First attempt - show initial warnings
+                addTerminalMessage('INFO', '🎉 Hãy đến để chúc mừng TNM thoát khỏi server HUST! 🎉');
+                addTerminalMessage('ERROR', warnings[0], 'terminal-warning');
+                addTerminalMessage('WARNING', warnings[1]);
+                
+                // Start the button stealing animation
+                setTimeout(() => {
+                    addTerminalMessage('INFO', warnings[2]);
+                    declineBtn.classList.add('stolen-btn');
+                }, 1000);
+                
+                setTimeout(() => addTerminalMessage('WARNING', warnings[3]), 2000);
+                setTimeout(() => addTerminalMessage('WARNING', warnings[4]), 3000);
+                setTimeout(() => addTerminalMessage('INFO', warnings[5]), 4000);
+                setTimeout(() => {
+                    addTerminalMessage('SUCCESS', warnings[6]);
+                    // Restore button
+                    declineBtn.classList.remove('stolen-btn');
+                    declineBtn.style.display = 'inline-block';
+                }, 5000);
+                setTimeout(() => addTerminalMessage('WARNING', warnings[7]), 6000);
+                
+            } else if (declineAttempts === 2) {
+                // Second attempt - more dramatic
+                addTerminalMessage('ERROR', '🚨 ALERT: Decline button has been STOLEN AGAIN! 🚨', 'terminal-warning');
+                addTerminalMessage('WARNING', '🕵️ A professional button thief has arrived!');
+                addTerminalMessage('INFO', '💨 *whoosh sounds* The button disappeared!');
+                
+                declineBtn.style.display = 'none';
+                
+                setTimeout(() => {
+                    addTerminalMessage('INFO', '🔍 FBI is investigating the button theft...');
+                }, 2000);
+                
+                setTimeout(() => {
+                    addTerminalMessage('SUCCESS', '🛡️ Security upgrade complete! New button deployed!');
+                    declineBtn.style.display = 'inline-block';
+                    declineBtn.innerHTML = 'Từ chối (Bảo vệ)';
+                }, 4000);
+                
+            } else {
+                // Third+ attempt - surrender
+                addTerminalMessage('WARNING', '😅 OK OK, bạn thật sự muốn từ chối à?');
+                addTerminalMessage('INFO', '💔 Buồn quá... nhưng mình hiểu mà...');
+                addTerminalMessage('SUCCESS', '✅ Đã ghi nhận: Bạn từ chối tham dự (nhưng mình vẫn hope bạn đổi ý!)');
+                
+                // Hide decline button permanently
+                declineBtn.style.display = 'none';
+                
+                // Add a "changed mind" button
+                setTimeout(() => {
+                    const changedMindBtn = document.createElement('button');
+                    changedMindBtn.className = 'button';
+                    changedMindBtn.innerHTML = '💚 Tôi đổi ý rồi!';
+                    changedMindBtn.onclick = () => {
+                        addTerminalMessage('SUCCESS', '🎉 YAY! Cảm ơn bạn đã đổi ý! Welcome back! 🎉');
+                        confirmAttendance();
+                        changedMindBtn.remove();
+                    };
+                    document.querySelector('.buttons').appendChild(changedMindBtn);
+                }, 2000);
+            }
+        }
+
+        function addTerminalMessage(type, message, className = '') {
+            const terminal = document.querySelector('.terminal');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const newMessage = document.createElement('div');
+            newMessage.className = `command-line ${className}`;
+            
+            let typeColor = '#00aaff'; // INFO
+            if (type === 'SUCCESS') typeColor = '#00ff00';
+            if (type === 'WARNING') typeColor = '#ff9900';
+            if (type === 'ERROR') typeColor = '#ff0000';
+            
+            newMessage.innerHTML = `
+                <span class="prompt">[${timestamp.slice(0, 5)}] </span>
+                <span style="color: ${typeColor};">${type}</span>
+                <span style="margin-left: 10px;">${message}</span>
+            `;
+            
+            terminal.appendChild(newMessage);
+            newMessage.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function submitGuestbook() {
+            const name = document.getElementById('guestName').value;
+            const message = document.getElementById('guestMessage').value;
+            
+            if (!name.trim() || !message.trim()) {
+                alert('Vui lòng nhập đầy đủ tên và lời nhắn!');
+                return;
+            }
+            
+            try {
+                // Show loading
+                const submitBtn = document.querySelector('#guestbook button');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Đang gửi...';
+                submitBtn.disabled = true;
+                
+                const response = await fetch('/api/rsvp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name.trim(),
+                        message: message.trim(),
+                        status: 'confirmed',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Tạo hiệu ứng terminal success
+                    const terminal = document.querySelector('.terminal');
+                    const newOutput = document.createElement('div');
+                    newOutput.className = 'command-line';
+                    newOutput.innerHTML = `
+                        <div style="margin: 20px 0;">
+                            <div class="success">✅ Gửi thành công lên server!</div>
+                            <div style="color: #ffffff; margin-top: 10px;">
+                                <strong style="color: #ffff00;">Tên:</strong> ${name}<br>
+                                <strong style="color: #ffff00;">Lời nhắn:</strong> ${message}<br>
+                                <strong style="color: #ffff00;">ID:</strong> #${result.guest.id}
+                            </div>
+                            <div class="info" style="margin-top: 10px;">Cảm ơn bạn đã RSVP! Dữ liệu đã được lưu! 🎉</div>
+                        </div>
+                    `;
+                    terminal.appendChild(newOutput);
+                    
+                    // Reset form
+                    document.getElementById('guestName').value = '';
+                    document.getElementById('guestMessage').value = '';
+                    
+                    // Ẩn form
+                    document.getElementById('guestbook').style.display = 'none';
+                    
+                    // Scroll to new message
+                    newOutput.scrollIntoView({ behavior: 'smooth' });
+                    
+                } else {
+                    throw new Error(result.error || 'Failed to save RSVP');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                addTerminalMessage('ERROR', `❌ Lỗi: ${error.message}`, 'terminal-warning');
+            } finally {
+                // Reset button
+                const submitBtn = document.querySelector('#guestbook button');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function cancelGuestbook() {
+            document.getElementById('guestbook').style.display = 'none';
+            document.getElementById('guestName').value = '';
+            document.getElementById('guestMessage').value = '';
+        }
+
+        // Add terminal typing sound effect (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            // You could add typing sound effects here
+            console.log('Terminal loaded successfully!');
+        });
+    </script>
+</body>
+</html>

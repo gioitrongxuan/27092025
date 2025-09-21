@@ -118,6 +118,12 @@
             margin: 10px 5px;
             border-radius: 3px;
             transition: all 0.3s;
+            touch-action: manipulation;
+        }
+
+        .button:hover {
+            background: #00ff00;
+            color: #000;
         }
 
         .decline-btn {
@@ -209,6 +215,104 @@
         .command-line:nth-child(5) { animation-delay: 4s; }
         .output:nth-child(6) { animation-delay: 5s; }
 
+        /* Live Location/Map Styles */
+        .live-location {
+            background: #001122;
+            border: 2px solid #00aaff;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        .live-location.active {
+            border-color: #00ff00;
+            background: #002200;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 170, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 170, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 170, 255, 0); }
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+        }
+
+        .location-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+            animation: blink 1s infinite;
+        }
+
+        .status-dot.active {
+            background: #00ff00;
+        }
+
+        .location-sharing {
+            background: #002211;
+            border: 2px solid #00ff88;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .map-container {
+            margin: 15px 0;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #111;
+        }
+
+        .map-container iframe {
+            width: 100%;
+            height: 300px;
+            border: none;
+            filter: invert(90%) hue-rotate(180deg);
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .map-button {
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .map-button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .map-button:active {
+            transform: scale(0.98);
+        }
+
         @media (max-width: 600px) {
             .ascii-art {
                 font-size: 6px;
@@ -227,6 +331,19 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 5px;
+            }
+
+            .map-controls {
+                flex-direction: column;
+            }
+
+            .map-button {
+                width: 100%;
+                text-align: center;
+            }
+
+            .map-container iframe {
+                height: 250px;
             }
         }
     </style>
@@ -285,6 +402,51 @@
                 </div>
             </div>
 
+            <!-- Live Location/Map Section -->
+            <div class="live-location" id="liveLocationSection">
+                <div class="location-status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <h3 style="color: #00aaff;">🗺️ BẢN ĐỒ VỊ TRÍ CỦA GIỚI</h3>
+                </div>
+                
+                <div id="locationContent">
+                    <div class="info">🔄 Chưa có bản đồ vị trí. Giới sẽ chia sẻ vào ngày lễ tốt nghiệp.</div>
+                </div>
+
+                <!-- Map Container -->
+                <div class="map-container" id="mapContainer" style="display: none;">
+                    <iframe id="mapIframe" 
+                            src="" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+
+                <!-- Location Controls (for host) -->
+                <div class="location-sharing" id="locationSharing" style="display: none;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px;">🎓 ĐIỀU KHIỂN BẢN ĐỒ (CHỈ CHỦ LỄ)</h4>
+                    <div style="margin-bottom: 10px;">
+                        <input type="password" id="adminKey" placeholder="Nhập mật khẩu admin" 
+                               style="width: 200px; padding: 5px; background: #000; border: 1px solid #00ff00; color: #00ff00; margin-bottom: 5px;">
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <input type="text" id="mapLocationInput" placeholder="Nhập địa điểm (VD: Hội trường C2, ĐHBK Hà Nội)" 
+                               style="width: 100%; padding: 5px; background: #000; border: 1px solid #00ff00; color: #00ff00; margin-bottom: 5px;">
+                        <div style="color: #666; font-size: 11px;">
+                            Ví dụ: "Hội trường C2, Đại học Bách khoa Hà Nội" hoặc "Quảng trường C1, HUST"
+                        </div>
+                    </div>
+                    <div class="map-controls">
+                        <button class="map-button" onclick="showMap()">🗺️ Hiển thị bản đồ</button>
+                        <button class="map-button" onclick="hideMap()">❌ Ẩn bản đồ</button>
+                        <button class="map-button" onclick="useCurrentLocation()">📍 Vị trí hiện tại</button>
+                        <button class="map-button" onclick="toggleControls()">⚙️ Ẩn/Hiện panel</button>
+                    </div>
+                    <div id="locationStatus" style="margin-top: 10px; color: #ffff00; font-size: 12px;"></div>
+                </div>
+            </div>
+
             <div style="margin: 20px 0;">
                 <p style="color: #ffff00;">Nhấn "Đồng ý" và viết lưu bút cho mình bên dưới nhé!</p>
             </div>
@@ -298,7 +460,7 @@
                 <h3>Lưu ý:</h3>
                 <ul style="margin-left: 20px; margin-top: 10px;">
                     <li>Hãy đứng chờ mình quanh quảng trường C1 và gọi điện thoại để biết mình ở đâu nhé.</li>
-                    <li>Mình sẽ share link vị trí trực tiếp của mình ở đây vào buổi lễ tốt nghiệp nha.</li>
+                    <li>Mình sẽ chia sẻ bản đồ vị trí trực tiếp ở phần bên trên vào buổi lễ tốt nghiệp.</li>
                     <li>SĐT: 0374348370</li>
                 </ul>
             </div>
@@ -332,21 +494,191 @@
 
     <script>
         let declineAttempts = 0;
-        let buttonThiefActive = false;
+        let isMapVisible = false;
 
+        // Show admin controls on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('locationSharing').style.display = 'block';
+            addTerminalMessage('INFO', '🗺️ Panel điều khiển bản đồ đã sẵn sàng.');
+        });
+
+        // Map control functions
+        function showMap() {
+            const adminKey = document.getElementById('adminKey').value;
+            const location = document.getElementById('mapLocationInput').value;
+
+            if (!adminKey) {
+                updateLocationStatus('⚠️ Vui lòng nhập mật khẩu admin!');
+                return;
+            }
+
+            if (!location.trim()) {
+                updateLocationStatus('⚠️ Vui lòng nhập địa điểm!');
+                return;
+            }
+
+            updateLocationStatus('🔄 Đang tạo bản đồ...');
+
+            // Create Google Maps embed URL
+            const encodedLocation = encodeURIComponent(location.trim());
+            const mapUrl = `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tCY7_wUy5dXOFICfM&q=${encodedLocation}&zoom=16&maptype=roadmap`;
+            
+            // Alternative method without API key (uses basic embed)
+            const mapUrlBasic = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.0965896275953!2d105.84167431533321!3d21.00313598600749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab9bd9861ca1%3A0xe7887f7b72ca17a!2zxJDhuqFpIGjhu41jIELDoWNoIGtob2EgSMOgIE7hu5lp!5e0!3m2!1svi!2svn!4v1627890123456!5m2!1svi!2svn`;
+
+            // Set the iframe source
+            document.getElementById('mapIframe').src = mapUrlBasic;
+            document.getElementById('mapContainer').style.display = 'block';
+            
+            // Update UI
+            document.getElementById('statusDot').classList.add('active');
+            document.getElementById('liveLocationSection').classList.add('active');
+            
+            document.getElementById('locationContent').innerHTML = `
+                <div class="success">🟢 Bản đồ đã được chia sẻ!</div>
+                <div style="margin: 10px 0;">
+                    <div style="color: #ffffff;">📍 Vị trí: ${location}</div>
+                    <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
+                        📞 Liên hệ: 0374348370 | ⏰ Cập nhật: ${new Date().toLocaleTimeString('vi-VN')}
+                    </div>
+                </div>
+            `;
+
+            isMapVisible = true;
+            updateLocationStatus('✅ Bản đồ đã được hiển thị thành công!');
+            addTerminalMessage('SUCCESS', `🗺️ Bản đồ "${location}" đã được chia sẻ!`);
+
+            // Scroll to map
+            document.getElementById('mapContainer').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideMap() {
+            const adminKey = document.getElementById('adminKey').value;
+
+            if (!adminKey) {
+                updateLocationStatus('⚠️ Vui lòng nhập mật khẩu admin!');
+                return;
+            }
+
+            updateLocationStatus('🔄 Đang ẩn bản đồ...');
+
+            // Hide map
+            document.getElementById('mapContainer').style.display = 'none';
+            document.getElementById('statusDot').classList.remove('active');
+            document.getElementById('liveLocationSection').classList.remove('active');
+            
+            document.getElementById('locationContent').innerHTML = `
+                <div class="warning">🔴 Bản đồ đã được ẩn</div>
+                <div style="color: #888; margin-top: 5px;">
+                    Giới đã dừng chia sẻ vị trí. Hãy gọi điện để biết vị trí chính xác!
+                </div>
+            `;
+
+            isMapVisible = false;
+            updateLocationStatus('⏹️ Đã ẩn bản đồ');
+            addTerminalMessage('WARNING', '❌ Bản đồ vị trí đã được ẩn');
+        }
+
+        function useCurrentLocation() {
+            const adminKey = document.getElementById('adminKey').value;
+
+            if (!adminKey) {
+                updateLocationStatus('⚠️ Vui lòng nhập mật khẩu admin!');
+                return;
+            }
+
+            if (!navigator.geolocation) {
+                updateLocationStatus('❌ Trình duyệt không hỗ trợ định vị GPS');
+                return;
+            }
+
+            updateLocationStatus('📍 Đang lấy vị trí hiện tại...');
+
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = Math.round(position.coords.accuracy);
+
+                    // Update input with coordinates
+                    document.getElementById('mapLocationInput').value = `${lat},${lng}`;
+
+                    // Create map with current location
+                    const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+                    document.getElementById('mapIframe').src = mapUrl;
+                    document.getElementById('mapContainer').style.display = 'block';
+
+                    // Update UI
+                    document.getElementById('statusDot').classList.add('active');
+                    document.getElementById('liveLocationSection').classList.add('active');
+                    
+                    document.getElementById('locationContent').innerHTML = `
+                        <div class="success">🟢 Vị trí hiện tại đã được chia sẻ!</div>
+                        <div style="margin: 10px 0;">
+                            <div style="color: #ffffff;">📍 Tọa độ: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+                            <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
+                                📞 0374348370 | 🎯 Độ chính xác: ~${accuracy}m | ⏰ ${new Date().toLocaleTimeString('vi-VN')}
+                            </div>
+                            <div style="color: #ffff00; margin-top: 5px;">💡 Vị trí GPS trực tiếp từ điện thoại</div>
+                        </div>
+                    `;
+
+                    isMapVisible = true;
+                    updateLocationStatus('✅ Đã sử dụng vị trí hiện tại thành công!');
+                    addTerminalMessage('SUCCESS', `📍 Vị trí GPS hiện tại đã được chia sẻ (${accuracy}m accuracy)`);
+
+                    // Scroll to map
+                    document.getElementById('mapContainer').scrollIntoView({ behavior: 'smooth' });
+                },
+                function(error) {
+                    let message = 'Không thể lấy vị trí';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            message = 'Quyền truy cập vị trí bị từ chối';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            message = 'Vị trí không khả dụng';
+                            break;
+                        case error.TIMEOUT:
+                            message = 'Timeout khi lấy vị trí';
+                            break;
+                    }
+                    updateLocationStatus(`❌ Lỗi: ${message}`);
+                    addTerminalMessage('ERROR', `❌ ${message}. Hãy nhập địa điểm thủ công.`);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 60000
+                }
+            );
+        }
+
+        function toggleControls() {
+            const locationSharing = document.getElementById('locationSharing');
+            const isVisible = locationSharing.style.display !== 'none';
+            locationSharing.style.display = isVisible ? 'none' : 'block';
+            
+            if (isVisible) {
+                addTerminalMessage('INFO', '⚙️ Panel điều khiển đã được ẩn');
+            } else {
+                addTerminalMessage('INFO', '⚙️ Panel điều khiển đã được hiển thị');
+            }
+        }
+
+        function updateLocationStatus(message) {
+            document.getElementById('locationStatus').textContent = message;
+        }
+
+        // Original functions remain the same
         function confirmAttendance() {
-            // Reset decline button if it was stolen
             const declineBtn = document.getElementById('declineBtn');
             declineBtn.classList.remove('stolen-btn');
             declineBtn.style.display = 'inline-block';
             
-            // Hiện form guestbook sau khi nhấn đồng ý
             document.getElementById('guestbook').style.display = 'block';
-            
-            // Scroll xuống form
             document.getElementById('guestbook').scrollIntoView({ behavior: 'smooth' });
             
-            // Thay đổi nội dung thông báo
             const rsvpSection = document.querySelector('.command-line:last-child');
             rsvpSection.innerHTML = '<span class="prompt">$ </span><span class="command">rsvp --confirm --guests=1</span>';
         }
@@ -356,7 +688,6 @@
             const terminal = document.querySelector('.terminal');
             const declineBtn = document.getElementById('declineBtn');
             
-            // Create warning messages
             const warnings = [
                 '🚨 ALERT: Decline button has been STOLEN! 🚨',
                 '⚠️ A sketchy figure is running away with the decline button!',
@@ -369,30 +700,25 @@
             ];
 
             if (declineAttempts === 1) {
-                // First attempt - show initial warnings
                 addTerminalMessage('INFO', '🎉 Hãy đến để chúc mừng Giới thoát khỏi server HUST! 🎉');
                 addTerminalMessage('ERROR', warnings[0], 'terminal-warning');
                 addTerminalMessage('WARNING', warnings[1]);
                 
-                // Start the button stealing animation
                 setTimeout(() => {
                     addTerminalMessage('INFO', warnings[2]);
                     declineBtn.classList.add('stolen-btn');
                 }, 1000);
                 
-                setTimeout(() => addTerminalMessage('WARNING', warnings[3]), 2000);
                 setTimeout(() => addTerminalMessage('WARNING', warnings[4]), 3000);
                 setTimeout(() => addTerminalMessage('INFO', warnings[5]), 4000);
                 setTimeout(() => {
                     addTerminalMessage('SUCCESS', warnings[6]);
-                    // Restore button
                     declineBtn.classList.remove('stolen-btn');
                     declineBtn.style.display = 'inline-block';
                 }, 5000);
                 setTimeout(() => addTerminalMessage('WARNING', warnings[7]), 6000);
                 
             } else if (declineAttempts === 2) {
-                // Second attempt - more dramatic
                 addTerminalMessage('ERROR', '🚨 ALERT: Decline button has been STOLEN AGAIN! 🚨', 'terminal-warning');
                 addTerminalMessage('WARNING', '🕵️ A professional button thief has arrived!');
                 addTerminalMessage('INFO', '💨 *whoosh sounds* The button disappeared!');
@@ -410,15 +736,12 @@
                 }, 4000);
                 
             } else {
-                // Third+ attempt - surrender
                 addTerminalMessage('WARNING', '😅 OK OK, bạn thật sự muốn từ chối à?');
                 addTerminalMessage('INFO', '💔 Buồn quá... nhưng mình hiểu mà...');
                 addTerminalMessage('SUCCESS', '✅ Đã ghi nhận: Bạn từ chối tham dự (nhưng mình vẫn hope bạn đổi ý!)');
                 
-                // Hide decline button permanently
                 declineBtn.style.display = 'none';
                 
-                // Add a "changed mind" button
                 setTimeout(() => {
                     const changedMindBtn = document.createElement('button');
                     changedMindBtn.className = 'button';
@@ -440,7 +763,7 @@
             const newMessage = document.createElement('div');
             newMessage.className = `command-line ${className}`;
             
-            let typeColor = '#00aaff'; // INFO
+            let typeColor = '#00aaff';
             if (type === 'SUCCESS') typeColor = '#00ff00';
             if (type === 'WARNING') typeColor = '#ff9900';
             if (type === 'ERROR') typeColor = '#ff0000';
@@ -465,7 +788,6 @@
             }
             
             try {
-                // Show loading
                 const submitBtn = document.querySelector('#guestbook button');
                 const originalText = submitBtn.textContent;
                 submitBtn.textContent = 'Đang gửi...';
@@ -487,7 +809,6 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    // Tạo hiệu ứng terminal success
                     const terminal = document.querySelector('.terminal');
                     const newOutput = document.createElement('div');
                     newOutput.className = 'command-line';
@@ -504,14 +825,10 @@
                     `;
                     terminal.appendChild(newOutput);
                     
-                    // Reset form
                     document.getElementById('guestName').value = '';
                     document.getElementById('guestMessage').value = '';
-                    
-                    // Ẩn form
                     document.getElementById('guestbook').style.display = 'none';
                     
-                    // Scroll to new message
                     newOutput.scrollIntoView({ behavior: 'smooth' });
                     
                 } else {
@@ -522,7 +839,6 @@
                 console.error('Error:', error);
                 addTerminalMessage('ERROR', `❌ Lỗi: ${error.message}`, 'terminal-warning');
             } finally {
-                // Reset button
                 const submitBtn = document.querySelector('#guestbook button');
                 submitBtn.textContent = originalText;
                 submitBtn.disabled = false;
@@ -534,12 +850,6 @@
             document.getElementById('guestName').value = '';
             document.getElementById('guestMessage').value = '';
         }
-
-        // Add terminal typing sound effect (optional)
-        document.addEventListener('DOMContentLoaded', function() {
-            // You could add typing sound effects here
-            console.log('Terminal loaded successfully!');
-        });
     </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="streamdy.PNG">
-    <title>Lễ Tốt nghiệp - Terminal Style</title>
+     <title>Lễ Tốt nghiệp - Terminal Style</title>
     <style>
         * {
             margin: 0;
@@ -261,16 +261,6 @@
 
         <div class="output">
             <div class="output">
-            <!-- Stats Section -->
-            <div id="statsDisplay" style="margin-bottom: 30px;">
-                <div style="text-align: center; padding: 15px; border: 1px solid #333; background: #111; border-radius: 5px;">
-                    <h3 style="color: #00ffff; margin-bottom: 15px;">📊 Thống kê tham dự:</h3>
-                    <div id="statsContent">
-                        <div class="info" style="color: #666;">Đang tải thống kê... ⏳</div>
-                    </div>
-                </div>
-            </div>
-
             <h2 style="color: #ffff00; margin-bottom: 20px;">Thân mời bạn đến tham dự:</h2>
             <h1 style="color: #00ffff; margin-bottom: 30px; font-size: 24px;">Lễ Tốt nghiệp của Giới</h1>
             
@@ -350,29 +340,51 @@
         let watchId = null;
         let isSharing = false;
 
-        // Get current location from phone
+        // Improved getCurrentLocation with better error handling
         function getCurrentLocation() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
-                    reject(new Error('Geolocation không được hỗ trợ'));
+                    reject(new Error('Geolocation không được hỗ trợ trên thiết bị này'));
                     return;
                 }
 
+                // Show user-friendly message
+                addTerminalMessage('INFO', '🔍 Đang tìm vị trí GPS... (có thể mất vài giây)');
+
                 navigator.geolocation.getCurrentPosition(
                     position => {
-                        resolve({
+                        const location = {
                             lat: position.coords.latitude,
                             lng: position.coords.longitude,
                             accuracy: position.coords.accuracy
-                        });
+                        };
+                        console.log('GPS Location found:', location);
+                        resolve(location);
                     },
                     error => {
-                        reject(new Error('Không thể lấy vị trí: ' + error.message));
+                        console.error('Geolocation error:', error);
+                        let errorMsg = 'Không thể lấy vị trí: ';
+                        
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg += 'Bạn đã từ chối quyền truy cập vị trí. Vào Settings > Privacy > Location để bật lại.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg += 'Không thể xác định vị trí. Thử ra ngoài trời hoặc gần cửa sổ.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg += 'GPS timeout. Thử lại sau hoặc di chuyển ra ngoài trời.';
+                                break;
+                            default:
+                                errorMsg += error.message;
+                                break;
+                        }
+                        reject(new Error(errorMsg));
                     },
                     {
                         enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 60000
+                        timeout: 15000, // Increase timeout to 15s
+                        maximumAge: 30000 // Use cached location up to 30s
                     }
                 );
             });
@@ -496,9 +508,11 @@
             locationInterval = setInterval(checkLiveLocation, 30000);
         }
 
-        // Admin functions for location sharing (Giới sử dụng)
+        // Fixed share location function
         async function shareLocation(locationData) {
             try {
+                console.log('Sharing location:', locationData);
+                
                 const response = await fetch('/api/share-location', {
                     method: 'POST',
                     headers: {
@@ -506,18 +520,21 @@
                     },
                     body: JSON.stringify({
                         ...locationData,
-                        timestamp: new Date().toISOString(),
-                        adminKey: 'graduation_admin_2025' // Simple auth
+                        adminKey: 'graduation_admin_2025' // Admin key for authentication
                     })
                 });
                 
                 if (response.ok) {
-                    console.log('Location shared successfully');
+                    const result = await response.json();
+                    console.log('Location shared successfully:', result);
+                    return result;
                 } else {
-                    console.error('Failed to share location');
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to share location');
                 }
             } catch (error) {
                 console.error('Error sharing location:', error);
+                throw error;
             }
         }
             try {
@@ -750,18 +767,12 @@
                     addTerminalMessage('INFO', `📝 Giới sẽ nhận được lời chúc của ${name} ngay lập tức`);
                     addTerminalMessage('INFO', `🆔 Mã xác nhận: #${result.guest.id}`);
                     
-                    // Update stats display
-                    loadStats();
-                    
                     // Reset form
                     document.getElementById('guestName').value = '';
                     document.getElementById('guestMessage').value = '';
                     
                     // Hide form
                     document.getElementById('guestbook').style.display = 'none';
-                    
-                    // Scroll to stats
-                    document.getElementById('statsDisplay').scrollIntoView({ behavior: 'smooth' });
                     
                 } else {
                     throw new Error(result.error || 'Failed to save RSVP');
@@ -814,7 +825,7 @@
         // Secret admin panel for location sharing
         function openLocationAdmin() {
             const password = prompt('Admin password:');
-            if (password === 'Giới_graduation_2025') {
+            if (password === 'gioi') {
                 showLocationAdmin();
             }
         }
@@ -883,25 +894,55 @@
             document.body.appendChild(adminPanel);
         }
 
-        // Mobile location functions
+        // Mobile location functions with better error handling
         async function shareCurrentLocationOnce() {
+            const loadingMsg = addTerminalMessage('INFO', '📍 Đang lấy vị trí từ GPS...');
+            
             try {
-                addTerminalMessage('INFO', '📍 Đang lấy vị trí hiện tại...');
+                // Request location permission first
                 const location = await getCurrentLocation();
-                const mapsUrl = generateMapsLink(location.lat, location.lng);
+                console.log('Got location:', location);
                 
-                await shareLocation({
+                const mapsUrl = generateMapsLink(location.lat, location.lng);
+                console.log('Generated maps URL:', mapsUrl);
+                
+                // Update loading message
+                loadingMsg.innerHTML = loadingMsg.innerHTML.replace('Đang lấy vị trí từ GPS...', 'Đang gửi lên server...');
+                
+                const result = await shareLocation({
                     isActive: true,
-                    description: `📍 Giới đang ở đây (${location.accuracy}m)`,
+                    description: `📍 Giới đang ở đây (độ chính xác: ${Math.round(location.accuracy)}m)`,
                     mapUrl: mapsUrl,
                     phone: '0365211103',
-                    note: `Cập nhật ${new Date().toLocaleTimeString('vi-VN')}. Click Maps để tìm mình!`
+                    note: `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN')}. Click Maps để tìm mình nhé! 📍`
                 });
 
-                addTerminalMessage('SUCCESS', '✅ Đã share vị trí thành công!');
+                console.log('Share result:', result);
+                addTerminalMessage('SUCCESS', '✅ Đã share vị trí thành công! Bạn bè có thể thấy location của bạn rồi! 🎉');
+                addTerminalMessage('INFO', `🗺️ Maps URL: ${mapsUrl}`);
+                
                 closeMobileLocationAdmin();
+                
+                // Auto-scroll to location display for users to see
+                setTimeout(() => {
+                    const locationDisplay = document.getElementById('liveLocation');
+                    if (locationDisplay) {
+                        locationDisplay.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }, 500);
+                
             } catch (error) {
-                addTerminalMessage('ERROR', `❌ Lỗi: ${error.message}`, 'terminal-warning');
+                console.error('Location sharing error:', error);
+                addTerminalMessage('ERROR', `❌ Lỗi share location: ${error.message}`, 'terminal-warning');
+                
+                // Show specific error messages
+                if (error.message.includes('User denied')) {
+                    addTerminalMessage('WARNING', '⚠️ Bạn cần cho phép truy cập vị trí trong browser settings');
+                } else if (error.message.includes('Timeout')) {
+                    addTerminalMessage('WARNING', '⚠️ GPS timeout - thử lại hoặc ra ngoài trời');
+                } else if (error.message.includes('Network')) {
+                    addTerminalMessage('WARNING', '⚠️ Lỗi mạng - kiểm tra kết nối internet');
+                }
             }
         }
 
@@ -925,6 +966,7 @@
                 addTerminalMessage('SUCCESS', '✅ Đã share location với custom message!');
                 closeMobileLocationAdmin();
             } catch (error) {
+                console.error('Custom location error:', error);
                 addTerminalMessage('ERROR', `❌ Lỗi: ${error.message}`, 'terminal-warning');
             }
         }

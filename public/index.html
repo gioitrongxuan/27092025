@@ -272,7 +272,7 @@
             </div>
 
             <h2 style="color: #ffff00; margin-bottom: 20px;">Thân mời bạn đến tham dự:</h2>
-            <h1 style="color: #00ffff; margin-bottom: 30px; font-size: 24px;">Lễ Tốt nghiệp của TNM</h1>
+            <h1 style="color: #00ffff; margin-bottom: 30px; font-size: 24px;">Lễ Tốt nghiệp của Giới</h1>
             
             <div class="event-details">
                 <div class="detail-row">
@@ -313,13 +313,13 @@
                 
                 <!-- Live Location Section -->
                 <div id="liveLocation" style="display: none; margin-top: 20px; padding: 15px; border: 2px solid #ffff00; border-radius: 5px; background: #222;">
-                    <h3 style="color: #ffff00; margin-bottom: 10px;">📍 VỊ TRÍ LIVE - TNM đang ở đây:</h3>
+                    <h3 style="color: #ffff00; margin-bottom: 10px;">📍 VỊ TRÍ LIVE - Giới đang ở đây:</h3>
                     <div id="locationContent"></div>
                 </div>
             </div>
 
             <div class="guestbook" id="guestbook" style="display: none;">
-                <h3 style="color: #00ffff; margin-bottom: 15px;">📝 Lưu bút cho TNM</h3>
+                <h3 style="color: #00ffff; margin-bottom: 15px;">📝 Lưu bút cho Giới</h3>
                 
                 <div style="margin-bottom: 15px;">
                     <label style="color: #ffff00; display: block; margin-bottom: 5px;">TÊN CỦA BAN:</label>
@@ -328,7 +328,7 @@
                 
                 <div style="margin-bottom: 15px;">
                     <label style="color: #ffff00; display: block; margin-bottom: 5px;">NHẬP LỜI NHẮN:</label>
-                    <textarea id="guestMessage" placeholder="Nhập lời nhắn cho TNM..." style="width: 100%; height: 100px; background: #000; border: 1px solid #00ff00; color: #00ff00; font-family: inherit; padding: 10px; resize: vertical;"></textarea>
+                    <textarea id="guestMessage" placeholder="Nhập lời nhắn cho Giới..." style="width: 100%; height: 100px; background: #000; border: 1px solid #00ff00; color: #00ff00; font-family: inherit; padding: 10px; resize: vertical;"></textarea>
                 </div>
                 
                 <div style="text-align: center;">
@@ -464,23 +464,23 @@
                 ${data.mapUrl ? `
                     <div style="margin-bottom: 10px;">
                         <a href="${data.mapUrl}" target="_blank" class="map-link" style="color: #00ffff;">
-                            🗺️ Mở Google Maps để tìm TNM
+                            🗺️ Mở Google Maps để tìm Giới
                         </a>
                     </div>
                 ` : ''}
                 ${data.phone ? `
                     <div style="margin-bottom: 10px;">
-                        <strong style="color: #00ff00;">📞 Gọi TNM:</strong> 
+                        <strong style="color: #00ff00;">📞 Gọi Giới:</strong> 
                         <a href="tel:${data.phone}" style="color: #00ffff;">${data.phone}</a>
                     </div>
                 ` : ''}
                 <div style="font-style: italic; color: #ffff00; font-size: 14px;">
-                    ${data.note || 'TNM đang ở đây! Tìm mình nhé! 😊'}
+                    ${data.note || 'Giới đang ở đây! Tìm mình nhé! 😊'}
                 </div>
             `;
 
             // Add terminal notification
-            addTerminalMessage('INFO', `📍 TNM đã share vị trí live! Kiểm tra phía trên! 🎯`);
+            addTerminalMessage('INFO', `📍 Giới đã share vị trí live! Kiểm tra phía trên! 🎯`);
         }
 
         function hideLiveLocation() {
@@ -496,7 +496,7 @@
             locationInterval = setInterval(checkLiveLocation, 30000);
         }
 
-        // Admin functions for location sharing (TNM sử dụng)
+        // Admin functions for location sharing (Giới sử dụng)
         async function shareLocation(locationData) {
             try {
                 const response = await fetch('/api/share-location', {
@@ -628,7 +628,7 @@
 
             if (declineAttempts === 1) {
                 // First attempt - show initial warnings
-                addTerminalMessage('INFO', '🎉 Hãy đến để chúc mừng TNM thoát khỏi server HUST! 🎉');
+                addTerminalMessage('INFO', '🎉 Hãy đến để chúc mừng Giới thoát khỏi server HUST! 🎉');
                 addTerminalMessage('ERROR', warnings[0], 'terminal-warning');
                 addTerminalMessage('WARNING', warnings[1]);
                 
@@ -747,7 +747,7 @@
                 if (response.ok) {
                     // Show success message in terminal
                     addTerminalMessage('SUCCESS', `✅ Lưu bút đã được gửi thành công!`);
-                    addTerminalMessage('INFO', `📝 TNM sẽ nhận được lời chúc của ${name} ngay lập tức`);
+                    addTerminalMessage('INFO', `📝 Giới sẽ nhận được lời chúc của ${name} ngay lập tức`);
                     addTerminalMessage('INFO', `🆔 Mã xác nhận: #${result.guest.id}`);
                     
                     // Update stats display
@@ -790,13 +790,13 @@
             loadStats(); // Load stats instead of full messages
             startLocationPolling(); // Start checking for live location
             
-            // Add secret admin commands for TNM
+            // Add secret admin commands for Giới
             document.addEventListener('keydown', function(e) {
-                // Press Ctrl+Shift+L to open location sharing (for TNM)
+                // Press Ctrl+Shift+L to open location sharing (for Giới)
                 if (e.ctrlKey && e.shiftKey && e.key === 'L') {
                     openLocationAdmin();
                 }
-                // Press Ctrl+Shift+G to open guestbook admin (for TNM)  
+                // Press Ctrl+Shift+G to open guestbook admin (for Giới)  
                 if (e.ctrlKey && e.shiftKey && e.key === 'G') {
                     openGuestbookAdmin();
                 }
@@ -814,7 +814,7 @@
         // Secret admin panel for location sharing
         function openLocationAdmin() {
             const password = prompt('Admin password:');
-            if (password === 'tnm_graduation_2025') {
+            if (password === 'Giới_graduation_2025') {
                 showLocationAdmin();
             }
         }
@@ -892,7 +892,7 @@
                 
                 await shareLocation({
                     isActive: true,
-                    description: `📍 TNM đang ở đây (${location.accuracy}m)`,
+                    description: `📍 Giới đang ở đây (${location.accuracy}m)`,
                     mapUrl: mapsUrl,
                     phone: '0365211103',
                     note: `Cập nhật ${new Date().toLocaleTimeString('vi-VN')}. Click Maps để tìm mình!`
@@ -916,7 +916,7 @@
                 
                 await shareLocation({
                     isActive: true,
-                    description: customDesc || `📍 TNM đang ở đây`,
+                    description: customDesc || `📍 Giới đang ở đây`,
                     mapUrl: mapsUrl,
                     phone: '0365211103',
                     note: customNote || `Cập nhật ${new Date().toLocaleTimeString('vi-VN')}`

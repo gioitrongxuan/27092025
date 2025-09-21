@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs').promises;
 const path = require('path');
+const pool = require('./db');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,75 +60,62 @@ async function writeLocation(data) {
 
 // Routes - Public stats only (no actual guest messages)
 app.get('/api/guests', async (req, res) => {
-    try {
-        const data = await readData();
-        // Only return count and basic stats, not actual guest messages
-        res.json({
-            totalGuests: data.guests.length,
-            stats: data.stats,
-            recentCount: data.guests.filter(g => 
-                new Date(g.timestamp) > new Date(Date.now() - 24*60*60*1000)
-            ).length
-        });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to read guests' });
-    }
+  try {
+    const guests = await pool.query('SELECT * FROM guestbook ORDER BY timestamp DESC');
+    const stats = await pool.query('SELECT * FROM stats WHERE id = 1');
+
+    res.json({
+      totalGuests: guests.rowCount,
+      stats: stats.rows[0],
+      recentCount: guests.rows.filter(
+        g => new Date(g.timestamp) > new Date(Date.now() - 24*60*60*1000)
+      ).length
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to read guests' });
+  }
 });
+
 
 // Save guestbook entry
+// Save guestbook entry
 app.post('/api/rsvp', async (req, res) => {
-    try {
-        const { name, message, status, timestamp } = req.body;
-        
-        if (!name || !message) {
-            return res.status(400).json({ error: 'Name and message are required' });
-        }
-
-        const data = await readData();
-        
-        const newGuest = {
-            id: Date.now(),
-            name: name.trim(),
-            message: message.trim(),
-            status: status || 'confirmed',
-            timestamp: timestamp || new Date().toISOString(),
-            ip: req.ip || req.connection.remoteAddress
-        };
-
-        // Save to database/file
-        data.guests.push(newGuest);
-        
-        // Update stats
-        if (status === 'confirmed') {
-            data.stats.confirmed++;
-        } else if (status === 'declined') {
-            data.stats.declined++;
-        }
-
-        await writeData(data);
-        
-        console.log(`📝 New guestbook entry saved: ${newGuest.name} - ID: ${newGuest.id}`);
-        
-        res.json({ 
-            success: true, 
-            message: 'Lưu bút đã được lưu thành công!',
-            guest: {
-                id: newGuest.id,
-                name: newGuest.name,
-                timestamp: newGuest.timestamp
-            } // Only return basic info, not the full message
-        });
-        
-    } catch (error) {
-        console.error('Error saving RSVP:', error);
-        res.status(500).json({ error: 'Failed to save RSVP' });
+  try {
+    const { name, message, status } = req.body;
+    if (!name || !message) {
+      return res.status(400).json({ error: 'Name and message are required' });
     }
+
+    // Insert guest
+    const result = await pool.query(
+      `INSERT INTO guestbook (name, message, status, ip) 
+       VALUES ($1, $2, $3, $4) RETURNING id, name, timestamp`,
+      [name.trim(), message.trim(), status || 'confirmed', req.ip]
+    );
+
+    // Update stats
+    if (status === 'confirmed') {
+      await pool.query('UPDATE stats SET confirmed = confirmed + 1 WHERE id = 1');
+    } else if (status === 'declined') {
+      await pool.query('UPDATE stats SET declined = declined + 1 WHERE id = 1');
+    }
+
+    res.json({
+      success: true,
+      message: 'Lưu bút đã được lưu thành công!',
+      guest: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error saving RSVP:', error);
+    res.status(500).json({ error: 'Failed to save RSVP' });
+  }
 });
 
+// Public route to get stats
 app.get('/api/stats', async (req, res) => {
     try {
-        const data = await readData();
-        res.json(data.stats);
+        const result = await pool.query('SELECT * FROM stats WHERE id = 1');
+        res.json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: 'Failed to read stats' });
     }

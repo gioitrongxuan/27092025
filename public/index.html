@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="streamdy.PNG">
-     <title>Lễ Tốt nghiệp - Terminal Style</title>
+    <title>Lễ Tốt nghiệp - Terminal Style</title>
+
     <style>
         * {
             margin: 0;
@@ -208,6 +208,89 @@
         .command-line:nth-child(5) { animation-delay: 4s; }
         .output:nth-child(6) { animation-delay: 5s; }
 
+        /* Live Location Styles */
+        .live-location {
+            background: #001122;
+            border: 2px solid #00aaff;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: pulse 2s infinite;
+        }
+
+        .live-location.active {
+            border-color: #00ff00;
+            background: #002200;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 170, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 170, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 170, 255, 0); }
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+        }
+
+        .location-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #666;
+            animation: blink 1s infinite;
+        }
+
+        .status-dot.active {
+            background: #00ff00;
+        }
+
+        .location-sharing {
+            background: #002211;
+            border: 2px solid #00ff88;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .share-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .location-button {
+            background: #003300;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .location-button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .location-button.active {
+            background: #00aa00;
+            color: #fff;
+        }
+
         @media (max-width: 600px) {
             .ascii-art {
                 font-size: 6px;
@@ -226,6 +309,15 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 5px;
+            }
+
+            .share-controls {
+                flex-direction: column;
+            }
+
+            .location-button {
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -260,7 +352,6 @@
         </div>
 
         <div class="output">
-            <div class="output">
             <h2 style="color: #ffff00; margin-bottom: 20px;">Thân mời bạn đến tham dự:</h2>
             <h1 style="color: #00ffff; margin-bottom: 30px; font-size: 24px;">Lễ Tốt nghiệp của Giới</h1>
             
@@ -280,8 +371,36 @@
                     <div class="value">
                         <div>Hội trường C2</div>
                         <div>Đại học Bách khoa Hà Nội</div>
-                        <div><a href="https://maps.google.com" class="map-link">Click để mở Google Maps</a></div>
+                        <div><a href="https://maps.app.goo.gl/ZSpb4NJHbXPJ5SrM6" class="map-link">Click để mở Google Maps</a></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Live Location Section -->
+            <div class="live-location" id="liveLocationSection">
+                <div class="location-status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <h3 style="color: #00aaff;">📍 VỊ TRÍ TRỰC TIẾP CỦA GIỚI</h3>
+                </div>
+                
+                <div id="locationContent">
+                    <div class="info">🔄 Đang kiểm tra trạng thái chia sẻ vị trí...</div>
+                </div>
+
+                <!-- Location Sharing Controls (for host) -->
+                <div class="location-sharing" id="locationSharing" style="display: none;">
+                    <h4 style="color: #00ff88; margin-bottom: 10px;">🎓 ĐIỀU KHIỂN VỊ TRÍ (CHỈ CHỦ LỄ)</h4>
+                    <div>
+                        <input type="password" id="adminKey" placeholder="Nhập mật khẩu admin" 
+                               style="width: 200px; padding: 5px; background: #000; border: 1px solid #00ff00; color: #00ff00; margin-bottom: 10px;">
+                    </div>
+                    <div class="share-controls">
+                        <button class="location-button" onclick="startLocationSharing()">📡 Bật chia sẻ vị trí</button>
+                        <button class="location-button" onclick="stopLocationSharing()">⏹️ Dừng chia sẻ</button>
+                        <button class="location-button" onclick="shareCurrentLocation()">📌 Chia sẻ vị trí hiện tại</button>
+                        <button class="location-button" onclick="toggleLocationControls()">⚙️ Ẩn/Hiện panel</button>
+                    </div>
+                    <div id="locationStatus" style="margin-top: 10px; color: #ffff00;"></div>
                 </div>
             </div>
 
@@ -298,14 +417,9 @@
                 <h3>Lưu ý:</h3>
                 <ul style="margin-left: 20px; margin-top: 10px;">
                     <li>Hãy đứng chờ mình quanh quảng trường C1 và gọi điện thoại để biết mình ở đâu nhé.</li>
-                    <li>Mình sẽ share link vị trí trực tiếp của mình ở đây vào buổi lễ tốt nghiệp nha.</li>
+                    <li>Mình sẽ chia sẻ vị trí trực tiếp ở phần bên trên vào buổi lễ tốt nghiệp.</li>
+                    <li>SĐT: 0374348370</li>
                 </ul>
-                
-                <!-- Live Location Section -->
-                <div id="liveLocation" style="display: none; margin-top: 20px; padding: 15px; border: 2px solid #ffff00; border-radius: 5px; background: #222;">
-                    <h3 style="color: #ffff00; margin-bottom: 10px;">📍 VỊ TRÍ LIVE - Giới đang ở đây:</h3>
-                    <div id="locationContent"></div>
-                </div>
             </div>
 
             <div class="guestbook" id="guestbook" style="display: none;">
@@ -336,277 +450,288 @@
     </div>
 
     <script>
-        // Mobile location sharing functions
-        let watchId = null;
-        let isSharing = false;
+        let declineAttempts = 0;
+        let buttonThiefActive = false;
+        let locationWatchId = null;
+        let isLocationSharing = false;
 
-        // Improved getCurrentLocation with better error handling
-        function getCurrentLocation() {
+        // Check if this is mobile device
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Initialize location features
+        function initializeLocation() {
+            if (isMobile()) {
+                document.getElementById('locationSharing').style.display = 'block';
+                addTerminalMessage('INFO', '📱 Thiết bị di động đã được phát hiện. Tính năng chia sẻ vị trí đã sẵn sàng.');
+            }
+            
+            // Check live location status
+            checkLiveLocationStatus();
+            
+            // Update location status every 30 seconds
+            setInterval(checkLiveLocationStatus, 30000);
+        }
+
+        // Check live location status from server
+        async function checkLiveLocationStatus() {
+            try {
+                // This would normally fetch from your server
+                // For demo, we'll simulate the API call
+                const mockLocationData = {
+                    isActive: false,
+                    description: '',
+                    mapUrl: '',
+                    phone: '0374348370',
+                    note: '',
+                    timestamp: null
+                };
+
+                updateLocationDisplay(mockLocationData);
+            } catch (error) {
+                console.error('Error checking location status:', error);
+            }
+        }
+
+        // Update location display
+        function updateLocationDisplay(locationData) {
+            const statusDot = document.getElementById('statusDot');
+            const locationContent = document.getElementById('locationContent');
+            const liveLocationSection = document.getElementById('liveLocationSection');
+
+            if (locationData.isActive) {
+                statusDot.classList.add('active');
+                liveLocationSection.classList.add('active');
+                
+                locationContent.innerHTML = `
+                    <div class="success">🟢 Giới đang chia sẻ vị trí trực tiếp!</div>
+                    <div style="margin: 10px 0;">
+                        <div style="color: #ffffff;">${locationData.description || 'Đang cập nhật vị trí...'}</div>
+                        ${locationData.mapUrl ? `<div style="margin-top: 5px;"><a href="${locationData.mapUrl}" class="map-link" target="_blank">🗺️ Mở Google Maps</a></div>` : ''}
+                        <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
+                            📞 ${locationData.phone} | ⏰ Cập nhật: ${locationData.timestamp ? new Date(locationData.timestamp).toLocaleTimeString('vi-VN') : 'N/A'}
+                        </div>
+                        ${locationData.note ? `<div style="color: #ffff00; margin-top: 5px;">💡 ${locationData.note}</div>` : ''}
+                    </div>
+                `;
+            } else {
+                statusDot.classList.remove('active');
+                liveLocationSection.classList.remove('active');
+                
+                locationContent.innerHTML = `
+                    <div class="warning">🔴 Chưa có vị trí trực tiếp</div>
+                    <div style="color: #888; margin-top: 5px;">
+                        Giới sẽ chia sẻ vị trí trực tiếp vào buổi lễ tốt nghiệp.<br>
+                        Hãy quay lại trang này vào ngày 27/09/2025!
+                    </div>
+                `;
+            }
+        }
+
+        // Get current position
+        function getCurrentPosition() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
-                    reject(new Error('Geolocation không được hỗ trợ trên thiết bị này'));
+                    reject(new Error('Trình duyệt không hỗ trợ định vị'));
                     return;
                 }
 
-                // Show user-friendly message
-                addTerminalMessage('INFO', '🔍 Đang tìm vị trí GPS... (có thể mất vài giây)');
-
                 navigator.geolocation.getCurrentPosition(
                     position => {
-                        const location = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude,
-                            accuracy: position.coords.accuracy
-                        };
-                        console.log('GPS Location found:', location);
-                        resolve(location);
+                        const { latitude, longitude, accuracy } = position.coords;
+                        resolve({ latitude, longitude, accuracy });
                     },
                     error => {
-                        console.error('Geolocation error:', error);
-                        let errorMsg = 'Không thể lấy vị trí: ';
-                        
+                        let message = 'Không thể lấy vị trí';
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
-                                errorMsg += 'Bạn đã từ chối quyền truy cập vị trí. Vào Settings > Privacy > Location để bật lại.';
+                                message = 'Quyền truy cập vị trí bị từ chối';
                                 break;
                             case error.POSITION_UNAVAILABLE:
-                                errorMsg += 'Không thể xác định vị trí. Thử ra ngoài trời hoặc gần cửa sổ.';
+                                message = 'Vị trí không khả dụng';
                                 break;
                             case error.TIMEOUT:
-                                errorMsg += 'GPS timeout. Thử lại sau hoặc di chuyển ra ngoài trời.';
-                                break;
-                            default:
-                                errorMsg += error.message;
+                                message = 'Timeout khi lấy vị trí';
                                 break;
                         }
-                        reject(new Error(errorMsg));
+                        reject(new Error(message));
                     },
                     {
                         enableHighAccuracy: true,
-                        timeout: 15000, // Increase timeout to 15s
-                        maximumAge: 30000 // Use cached location up to 30s
+                        timeout: 10000,
+                        maximumAge: 60000
                     }
                 );
             });
         }
 
-        // Generate Google Maps link
-        function generateMapsLink(lat, lng) {
-            return `https://maps.google.com/maps?q=${lat},${lng}&z=17&hl=vi`;
-        }
-
-        // Auto-share location every 2 minutes when active
-        function startLocationSharing() {
-            if (isSharing) return;
-            
-            isSharing = true;
-            addTerminalMessage('INFO', '📍 Bắt đầu chia sẻ vị trí live...');
-
-            const shareCurrentLocation = async () => {
-                try {
-                    const location = await getCurrentLocation();
-                    const mapsUrl = generateMapsLink(location.lat, location.lng);
-                    
-                    // Share location with auto-generated description
-                    await shareLocation({
-                        isActive: true,
-                        description: `📍 Vị trí hiện tại (${location.accuracy}m độ chính xác)`,
-                        mapUrl: mapsUrl,
-                        phone: '0365211103', // Your phone number
-                        note: `Cập nhật tự động lúc ${new Date().toLocaleTimeString('vi-VN')}. Click link Maps để tìm mình!`
-                    });
-
-                    addTerminalMessage('SUCCESS', `✅ Đã cập nhật vị trí: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`);
-                } catch (error) {
-                    addTerminalMessage('ERROR', `❌ Lỗi share location: ${error.message}`, 'terminal-warning');
-                }
-            };
-
-            // Share immediately
-            shareCurrentLocation();
-
-            // Then share every 2 minutes
-            watchId = setInterval(shareCurrentLocation, 2 * 60 * 1000);
-        }
-
-        // Stop location sharing
-        function stopLocationSharing() {
-            if (!isSharing) return;
-            
-            isSharing = false;
-            if (watchId) {
-                clearInterval(watchId);
-                watchId = null;
-            }
-
-            // Deactivate location sharing
-            shareLocation({ isActive: false });
-            addTerminalMessage('INFO', '🛑 Đã dừng chia sẻ vị trí');
-        }
-
-        // Live Location Functions
-        async function checkLiveLocation() {
-            try {
-                const response = await fetch('/api/live-location');
-                if (response.ok) {
-                    const locationData = await response.json();
-                    if (locationData.isActive) {
-                        showLiveLocation(locationData);
-                    } else {
-                        hideLiveLocation();
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking location:', error);
-            }
-        }
-
-        function showLiveLocation(data) {
-            const locationDiv = document.getElementById('liveLocation');
-            const contentDiv = document.getElementById('locationContent');
-            
-            locationDiv.style.display = 'block';
-            contentDiv.innerHTML = `
-                <div style="margin-bottom: 10px;">
-                    <strong style="color: #00ff00;">📍 Vị trí hiện tại:</strong> ${data.description || 'Đang cập nhật...'}
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <strong style="color: #00ff00;">⏰ Cập nhật lúc:</strong> ${new Date(data.timestamp).toLocaleTimeString('vi-VN')}
-                </div>
-                ${data.mapUrl ? `
-                    <div style="margin-bottom: 10px;">
-                        <a href="${data.mapUrl}" target="_blank" class="map-link" style="color: #00ffff;">
-                            🗺️ Mở Google Maps để tìm Giới
-                        </a>
-                    </div>
-                ` : ''}
-                ${data.phone ? `
-                    <div style="margin-bottom: 10px;">
-                        <strong style="color: #00ff00;">📞 Gọi Giới:</strong> 
-                        <a href="tel:${data.phone}" style="color: #00ffff;">${data.phone}</a>
-                    </div>
-                ` : ''}
-                <div style="font-style: italic; color: #ffff00; font-size: 14px;">
-                    ${data.note || 'Giới đang ở đây! Tìm mình nhé! 😊'}
-                </div>
-            `;
-
-            // Add terminal notification
-            addTerminalMessage('INFO', `📍 Giới đã share vị trí live! Kiểm tra phía trên! 🎯`);
-        }
-
-        function hideLiveLocation() {
-            document.getElementById('liveLocation').style.display = 'none';
-        }
-
-        // Start polling for live location (every 30 seconds)
-        function startLocationPolling() {
-            // Check immediately
-            checkLiveLocation();
-            
-            // Then check every 30 seconds
-            locationInterval = setInterval(checkLiveLocation, 30000);
-        }
-
-        // Fixed share location function
-        async function shareLocation(locationData) {
-            try {
-                console.log('Sharing location:', locationData);
-                
-                const response = await fetch('/api/share-location', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        ...locationData,
-                        adminKey: 'graduation_admin_2025' // Admin key for authentication
-                    })
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('Location shared successfully:', result);
-                    return result;
-                } else {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to share location');
-                }
-            } catch (error) {
-                console.error('Error sharing location:', error);
-                throw error;
-            }
-        }
-            try {
-                const response = await fetch('/api/guests');
-                if (response.ok) {
-                    const guests = await response.json();
-                    displayGuestMessages(guests);
-                }
-            } catch (error) {
-                console.error('Error loading guestbook:', error);
-            }
-        }
-
-        // Display guest messages at the top
-        function displayGuestMessages(guests) {
-            const container = document.getElementById('guestMessages');
-            
-            if (guests.length === 0) {
-                container.innerHTML = '<div class="info" style="text-align: center; color: #666;">Chưa có lời chúc nào... Hãy là người đầu tiên! ✨</div>';
+        // Start location sharing
+        async function startLocationSharing() {
+            const adminKey = document.getElementById('adminKey').value;
+            if (!adminKey) {
+                alert('Vui lòng nhập mật khẩu admin!');
                 return;
             }
 
-            // Sort by newest first
-            const sortedGuests = guests.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            container.innerHTML = sortedGuests.map(guest => `
-                <div style="margin-bottom: 15px; padding: 10px; border-left: 3px solid #00ff00; background: #001100;">
-                    <div style="color: #ffff00; font-weight: bold; margin-bottom: 5px;">
-                        💚 ${guest.name}
-                        <span style="color: #666; font-size: 12px; font-weight: normal;">
-                            - ${new Date(guest.timestamp).toLocaleDateString('vi-VN')} 
-                            ${new Date(guest.timestamp).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}
-                        </span>
-                    </div>
-                    <div style="color: #ffffff; font-style: italic;">
-                        "${guest.message}"
-                    </div>
-                </div>
-            `).join('');
+            try {
+                updateLocationStatus('🔄 Đang bật chia sẻ vị trí...');
+                
+                const position = await getCurrentPosition();
+                const mapUrl = `https://www.google.com/maps?q=${position.latitude},${position.longitude}`;
+                
+                // This would normally send to your server
+                const locationData = {
+                    adminKey: adminKey,
+                    isActive: true,
+                    description: `📍 Tọa độ: ${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
+                    mapUrl: mapUrl,
+                    phone: '0374348370',
+                    note: `Độ chính xác: ~${Math.round(position.accuracy)}m`
+                };
 
-            // Auto-scroll to show latest message
-            container.scrollTop = 0;
+                // Simulate server response
+                setTimeout(() => {
+                    isLocationSharing = true;
+                    updateLocationDisplay({
+                        isActive: true,
+                        description: locationData.description,
+                        mapUrl: locationData.mapUrl,
+                        phone: locationData.phone,
+                        note: locationData.note,
+                        timestamp: new Date()
+                    });
+                    
+                    updateLocationStatus('✅ Chia sẻ vị trí đã được bật!');
+                    addTerminalMessage('SUCCESS', '📡 Vị trí trực tiếp đã được kích hoạt!');
+                    
+                    // Start continuous location updates
+                    startContinuousLocationUpdates();
+                }, 1000);
+
+            } catch (error) {
+                updateLocationStatus(`❌ Lỗi: ${error.message}`);
+                addTerminalMessage('ERROR', `❌ Không thể bật chia sẻ vị trí: ${error.message}`);
+            }
         }
 
-        // Add new message to display immediately
-        function addMessageToDisplay(guest) {
-            const container = document.getElementById('guestMessages');
+        // Stop location sharing
+        async function stopLocationSharing() {
+            const adminKey = document.getElementById('adminKey').value;
+            if (!adminKey) {
+                alert('Vui lòng nhập mật khẩu admin!');
+                return;
+            }
+
+            try {
+                updateLocationStatus('🔄 Đang dừng chia sẻ vị trí...');
+                
+                // Stop continuous updates
+                if (locationWatchId) {
+                    navigator.geolocation.clearWatch(locationWatchId);
+                    locationWatchId = null;
+                }
+                
+                // Simulate server update
+                setTimeout(() => {
+                    isLocationSharing = false;
+                    updateLocationDisplay({
+                        isActive: false,
+                        description: '',
+                        mapUrl: '',
+                        phone: '0374348370',
+                        note: '',
+                        timestamp: null
+                    });
+                    
+                    updateLocationStatus('⏹️ Đã dừng chia sẻ vị trí');
+                    addTerminalMessage('WARNING', '⏹️ Chia sẻ vị trí trực tiếp đã được tắt');
+                }, 1000);
+
+            } catch (error) {
+                updateLocationStatus(`❌ Lỗi: ${error.message}`);
+            }
+        }
+
+        // Share current location once
+        async function shareCurrentLocation() {
+            const adminKey = document.getElementById('adminKey').value;
+            if (!adminKey) {
+                alert('Vui lòng nhập mật khẩu admin!');
+                return;
+            }
+
+            try {
+                updateLocationStatus('📍 Đang lấy vị trí hiện tại...');
+                
+                const position = await getCurrentPosition();
+                const mapUrl = `https://www.google.com/maps?q=${position.latitude},${position.longitude}`;
+                
+                updateLocationDisplay({
+                    isActive: true,
+                    description: `📍 Vị trí hiện tại: ${position.latitude.toFixed(6)}, ${position.longitude.toFixed(6)}`,
+                    mapUrl: mapUrl,
+                    phone: '0374348370',
+                    note: `Độ chính xác: ~${Math.round(position.accuracy)}m | Chia sẻ 1 lần`,
+                    timestamp: new Date()
+                });
+                
+                updateLocationStatus('✅ Đã chia sẻ vị trí hiện tại');
+                addTerminalMessage('SUCCESS', '📌 Vị trí hiện tại đã được chia sẻ');
+
+            } catch (error) {
+                updateLocationStatus(`❌ Lỗi: ${error.message}`);
+            }
+        }
+
+        // Start continuous location updates
+        function startContinuousLocationUpdates() {
+            if (!navigator.geolocation) return;
+
+            locationWatchId = navigator.geolocation.watchPosition(
+                position => {
+                    if (isLocationSharing) {
+                        const { latitude, longitude, accuracy } = position.coords;
+                        const mapUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                        
+                        updateLocationDisplay({
+                            isActive: true,
+                            description: `📍 Tọa độ: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+                            mapUrl: mapUrl,
+                            phone: '0374348370',
+                            note: `Độ chính xác: ~${Math.round(accuracy)}m | Tự động cập nhật`,
+                            timestamp: new Date()
+                        });
+                    }
+                },
+                error => {
+                    console.error('Location watch error:', error);
+                    updateLocationStatus(`❌ Lỗi theo dõi vị trí: ${error.message}`);
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 30000
+                }
+            );
+        }
+
+        // Toggle location controls visibility
+        function toggleLocationControls() {
+            const locationSharing = document.getElementById('locationSharing');
+            const isVisible = locationSharing.style.display !== 'none';
+            locationSharing.style.display = isVisible ? 'none' : 'block';
             
-            const newMessage = document.createElement('div');
-            newMessage.style.cssText = 'margin-bottom: 15px; padding: 10px; border-left: 3px solid #00ff00; background: #001100; animation: fadeIn 0.5s;';
-            newMessage.innerHTML = `
-                <div style="color: #ffff00; font-weight: bold; margin-bottom: 5px;">
-                    💚 ${guest.name}
-                    <span style="color: #666; font-size: 12px; font-weight: normal;">
-                        - ${new Date(guest.timestamp).toLocaleDateString('vi-VN')} 
-                        ${new Date(guest.timestamp).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'})}
-                    </span>
-                </div>
-                <div style="color: #ffffff; font-style: italic;">
-                    "${guest.message}"
-                </div>
-            `;
-            
-            // Remove "no messages" placeholder if exists
-            const placeholder = container.querySelector('.info');
-            if (placeholder) placeholder.remove();
-            
-            // Add to top
-            container.insertBefore(newMessage, container.firstChild);
-            
-            // Scroll to show new message
-            container.scrollTop = 0;
+            if (isVisible) {
+                addTerminalMessage('INFO', '⚙️ Panel điều khiển vị trí đã được ẩn');
+            } else {
+                addTerminalMessage('INFO', '⚙️ Panel điều khiển vị trí đã được hiển thị');
+            }
+        }
+
+        // Update location status message
+        function updateLocationStatus(message) {
+            document.getElementById('locationStatus').textContent = message;
         }
 
         function confirmAttendance() {
@@ -762,17 +887,32 @@
                 const result = await response.json();
                 
                 if (response.ok) {
-                    // Show success message in terminal
-                    addTerminalMessage('SUCCESS', `✅ Lưu bút đã được gửi thành công!`);
-                    addTerminalMessage('INFO', `📝 Giới sẽ nhận được lời chúc của ${name} ngay lập tức`);
-                    addTerminalMessage('INFO', `🆔 Mã xác nhận: #${result.guest.id}`);
+                    // Tạo hiệu ứng terminal success
+                    const terminal = document.querySelector('.terminal');
+                    const newOutput = document.createElement('div');
+                    newOutput.className = 'command-line';
+                    newOutput.innerHTML = `
+                        <div style="margin: 20px 0;">
+                            <div class="success">✅ Gửi thành công lên server!</div>
+                            <div style="color: #ffffff; margin-top: 10px;">
+                                <strong style="color: #ffff00;">Tên:</strong> ${name}<br>
+                                <strong style="color: #ffff00;">Lời nhắn:</strong> ${message}<br>
+                                <strong style="color: #ffff00;">ID:</strong> #${result.guest.id}
+                            </div>
+                            <div class="info" style="margin-top: 10px;">Cảm ơn bạn đã RSVP! Dữ liệu đã được lưu! 🎉</div>
+                        </div>
+                    `;
+                    terminal.appendChild(newOutput);
                     
                     // Reset form
                     document.getElementById('guestName').value = '';
                     document.getElementById('guestMessage').value = '';
                     
-                    // Hide form
+                    // Ẩn form
                     document.getElementById('guestbook').style.display = 'none';
+                    
+                    // Scroll to new message
+                    newOutput.scrollIntoView({ behavior: 'smooth' });
                     
                 } else {
                     throw new Error(result.error || 'Failed to save RSVP');
@@ -795,215 +935,17 @@
             document.getElementById('guestMessage').value = '';
         }
 
-        // Document ready
+        // Initialize everything when page loads
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Terminal loaded successfully!');
-            loadStats(); // Load stats instead of full messages
-            startLocationPolling(); // Start checking for live location
             
-            // Add secret admin commands for Giới
-            document.addEventListener('keydown', function(e) {
-                // Press Ctrl+Shift+L to open location sharing (for Giới)
-                if (e.ctrlKey && e.shiftKey && e.key === 'L') {
-                    openLocationAdmin();
-                }
-                // Press Ctrl+Shift+G to open guestbook admin (for Giới)  
-                if (e.ctrlKey && e.shiftKey && e.key === 'G') {
-                    openGuestbookAdmin();
-                }
-            });
-        });
-
-        // Open guestbook admin
-        function openGuestbookAdmin() {
-            const password = prompt('Admin password để xem lưu bút:');
-            if (password) {
-                window.open(`/api/admin/guestbook?password=${password}`, '_blank');
-            }
-        }
-
-        // Secret admin panel for location sharing
-        function openLocationAdmin() {
-            const password = prompt('Admin password:');
-            if (password === 'gioi') {
-                showLocationAdmin();
-            }
-        }
-
-        // Mobile-friendly location admin
-        function showMobileLocationAdmin() {
-            const adminPanel = document.createElement('div');
-            adminPanel.id = 'mobileLocationAdmin';
-            adminPanel.style.cssText = `
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.95); z-index: 2000;
-                display: flex; flex-direction: column; padding: 20px;
-                overflow-y: auto;
-            `;
-            adminPanel.innerHTML = `
-                <div style="background: #000; border: 2px solid #00ff00; border-radius: 10px; padding: 20px; flex: 1; max-width: 500px; margin: auto;">
-                    <h2 style="color: #00ff00; text-align: center; margin-bottom: 20px;">📱 Mobile Location Sharing</h2>
-                    
-                    <div style="background: #111; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                        <h3 style="color: #ffff00; margin-bottom: 10px;">🎯 Quick Actions:</h3>
-                        
-                        <button onclick="shareCurrentLocationOnce()" 
-                                style="width: 100%; padding: 15px; margin: 5px 0; background: #006600; color: white; border: none; border-radius: 5px; font-size: 16px;">
-                            📍 Share Vị Trí Hiện Tại
-                        </button>
-                        
-                        <button onclick="startLocationSharing()" 
-                                style="width: 100%; padding: 15px; margin: 5px 0; background: #0066aa; color: white; border: none; border-radius: 5px; font-size: 16px;">
-                            🔄 Bật Auto-Share (2 phút/lần)
-                        </button>
-                        
-                        <button onclick="stopLocationSharing()" 
-                                style="width: 100%; padding: 15px; margin: 5px 0; background: #aa0000; color: white; border: none; border-radius: 5px; font-size: 16px;">
-                            🛑 Dừng Location Sharing
-                        </button>
-                    </div>
-
-                    <div style="background: #111; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                        <h3 style="color: #ffff00; margin-bottom: 10px;">✏️ Custom Message:</h3>
-                        
-                        <input type="text" id="mobileLocationDesc" placeholder="VD: Đang ở quán cafe gần cổng C1" 
-                               style="width: 100%; padding: 10px; margin: 5px 0; background: #222; border: 1px solid #333; color: white; border-radius: 3px;">
-                        
-                        <textarea id="mobileLocationNote" placeholder="VD: Tìm mình ở đây nhé! Gọi điện nếu không thấy."
-                                  style="width: 100%; height: 80px; padding: 10px; margin: 5px 0; background: #222; border: 1px solid #333; color: white; border-radius: 3px; resize: vertical;"></textarea>
-                        
-                        <button onclick="shareCustomLocation()" 
-                                style="width: 100%; padding: 12px; margin: 10px 0; background: #aa6600; color: white; border: none; border-radius: 5px; font-size: 16px;">
-                            📝 Share với Custom Message
-                        </button>
-                    </div>
-
-                    <div style="text-align: center;">
-                        <button onclick="closeMobileLocationAdmin()" 
-                                style="padding: 12px 30px; background: #666; color: white; border: none; border-radius: 5px; font-size: 16px;">
-                            ❌ Đóng
-                        </button>
-                    </div>
-
-                    <div style="margin-top: 20px; padding: 10px; background: #220000; border-radius: 5px; font-size: 12px; color: #ff6666;">
-                        <strong>⚠️ Lưu ý:</strong> Cần cho phép truy cập vị trí khi browser hỏi. 
-                        Location sẽ được chia sẻ real-time với tất cả khách mời.
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(adminPanel);
-        }
-
-        // Mobile location functions with better error handling
-        async function shareCurrentLocationOnce() {
-            const loadingMsg = addTerminalMessage('INFO', '📍 Đang lấy vị trí từ GPS...');
+            // Initialize location features
+            initializeLocation();
             
-            try {
-                // Request location permission first
-                const location = await getCurrentLocation();
-                console.log('Got location:', location);
-                
-                const mapsUrl = generateMapsLink(location.lat, location.lng);
-                console.log('Generated maps URL:', mapsUrl);
-                
-                // Update loading message
-                loadingMsg.innerHTML = loadingMsg.innerHTML.replace('Đang lấy vị trí từ GPS...', 'Đang gửi lên server...');
-                
-                const result = await shareLocation({
-                    isActive: true,
-                    description: `📍 Giới đang ở đây (độ chính xác: ${Math.round(location.accuracy)}m)`,
-                    mapUrl: mapsUrl,
-                    phone: '0365211103',
-                    note: `Cập nhật lúc ${new Date().toLocaleTimeString('vi-VN')}. Click Maps để tìm mình nhé! 📍`
-                });
-
-                console.log('Share result:', result);
-                addTerminalMessage('SUCCESS', '✅ Đã share vị trí thành công! Bạn bè có thể thấy location của bạn rồi! 🎉');
-                addTerminalMessage('INFO', `🗺️ Maps URL: ${mapsUrl}`);
-                
-                closeMobileLocationAdmin();
-                
-                // Auto-scroll to location display for users to see
+            // Show mobile-specific message
+            if (isMobile()) {
                 setTimeout(() => {
-                    const locationDisplay = document.getElementById('liveLocation');
-                    if (locationDisplay) {
-                        locationDisplay.scrollIntoView({ behavior: 'smooth' });
-                    }
-                }, 500);
-                
-            } catch (error) {
-                console.error('Location sharing error:', error);
-                addTerminalMessage('ERROR', `❌ Lỗi share location: ${error.message}`, 'terminal-warning');
-                
-                // Show specific error messages
-                if (error.message.includes('User denied')) {
-                    addTerminalMessage('WARNING', '⚠️ Bạn cần cho phép truy cập vị trí trong browser settings');
-                } else if (error.message.includes('Timeout')) {
-                    addTerminalMessage('WARNING', '⚠️ GPS timeout - thử lại hoặc ra ngoài trời');
-                } else if (error.message.includes('Network')) {
-                    addTerminalMessage('WARNING', '⚠️ Lỗi mạng - kiểm tra kết nối internet');
-                }
+                    addTerminalMessage('INFO', '📱 Phát hiện thiết bị di động. Tính năng chia sẻ vị trí có sẵn cho chủ lễ.');
+                }, 3000);
             }
-        }
-
-        async function shareCustomLocation() {
-            try {
-                const customDesc = document.getElementById('mobileLocationDesc').value.trim();
-                const customNote = document.getElementById('mobileLocationNote').value.trim();
-                
-                addTerminalMessage('INFO', '📍 Đang lấy vị trí với custom message...');
-                const location = await getCurrentLocation();
-                const mapsUrl = generateMapsLink(location.lat, location.lng);
-                
-                await shareLocation({
-                    isActive: true,
-                    description: customDesc || `📍 Giới đang ở đây`,
-                    mapUrl: mapsUrl,
-                    phone: '0365211103',
-                    note: customNote || `Cập nhật ${new Date().toLocaleTimeString('vi-VN')}`
-                });
-
-                addTerminalMessage('SUCCESS', '✅ Đã share location với custom message!');
-                closeMobileLocationAdmin();
-            } catch (error) {
-                console.error('Custom location error:', error);
-                addTerminalMessage('ERROR', `❌ Lỗi: ${error.message}`, 'terminal-warning');
-            }
-        }
-
-        function closeMobileLocationAdmin() {
-            const panel = document.getElementById('mobileLocationAdmin');
-            if (panel) panel.remove();
-        }
-
-        async function activateLocation() {
-            const description = document.getElementById('locationDesc').value;
-            const mapUrl = document.getElementById('locationUrl').value;
-            const phone = document.getElementById('locationPhone').value;
-            const note = document.getElementById('locationNote').value;
-
-            await shareLocation({
-                isActive: true,
-                description,
-                mapUrl,
-                phone,
-                note
-            });
-
-            alert('✅ Live location đã được bật!');
-            closeLocationAdmin();
-        }
-
-        async function deactivateLocation() {
-            await shareLocation({ isActive: false });
-            alert('❌ Live location đã được tắt!');
-            closeLocationAdmin();
-        }
-
-        function closeLocationAdmin() {
-            const panel = document.getElementById('locationAdmin');
-            if (panel) panel.remove();
-        }
-    </script>
-</body>
-</html>
+        });

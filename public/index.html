@@ -496,14 +496,71 @@
         let declineAttempts = 0;
         let isMapVisible = false;
 
-        // Show admin controls on page load
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('locationSharing').style.display = 'block';
-            addTerminalMessage('INFO', '🗺️ Panel điều khiển bản đồ đã sẵn sàng.');
+            
+            // Check for existing shared map from server
+            checkSharedMapStatus();
+            
+            // Poll for map updates every 10 seconds
+            setInterval(checkSharedMapStatus, 10000);
         });
 
-        // Map control functions
-        function showMap() {
+        // Check shared map status from server
+        async function checkSharedMapStatus() {
+            try {
+                // This would normally fetch from your /api/live-location endpoint
+                const response = await fetch('/api/live-location');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateMapFromServer(data);
+                } else {
+                    console.log('No shared map data available');
+                }
+            } catch (error) {
+                // Silently handle error - server might not be available
+                console.log('Could not check map status:', error.message);
+            }
+        }
+
+        // Update map display based on server data
+        function updateMapFromServer(data) {
+            if (data.isActive && data.mapUrl) {
+                // Show shared map to all users
+                document.getElementById('mapIframe').src = data.mapUrl;
+                document.getElementById('mapContainer').style.display = 'block';
+                document.getElementById('statusDot').classList.add('active');
+                document.getElementById('liveLocationSection').classList.add('active');
+                
+                document.getElementById('locationContent').innerHTML = `
+                    <div class="success">🟢 Giới đang chia sẻ vị trí trực tiếp!</div>
+                    <div style="margin: 10px 0;">
+                        <div style="color: #ffffff;">📍 ${data.description || 'Vị trí hiện tại'}</div>
+                        <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
+                            📞 ${data.phone || '0374348370'} | ⏰ Cập nhật: ${data.timestamp ? new Date(data.timestamp).toLocaleTimeString('vi-VN') : 'N/A'}
+                        </div>
+                        ${data.note ? `<div style="color: #ffff00; margin-top: 5px;">💡 ${data.note}</div>` : ''}
+                    </div>
+                `;
+                
+                isMapVisible = true;
+            } else {
+                // Hide map for all users
+                document.getElementById('mapContainer').style.display = 'none';
+                document.getElementById('statusDot').classList.remove('active');
+                document.getElementById('liveLocationSection').classList.remove('active');
+                
+                document.getElementById('locationContent').innerHTML = `
+                    <div class="info">🔄 Chưa có bản đồ vị trí. Giới sẽ chia sẻ vào ngày lễ tốt nghiệp.</div>
+                `;
+                
+                isMapVisible = false;
+            }
+        }
+        // Map control functions  
+        async function showMap() {
             const adminKey = document.getElementById('adminKey').value;
             const location = document.getElementById('mapLocationInput').value;
 
@@ -517,42 +574,91 @@
                 return;
             }
 
-            updateLocationStatus('🔄 Đang tạo bản đồ...');
+            updateLocationStatus('🔄 Đang chia sẻ bản đồ với tất cả người dùng...');
 
-            // Create Google Maps embed URL
-            const encodedLocation = encodeURIComponent(location.trim());
-            const mapUrl = `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tCY7_wUy5dXOFICfM&q=${encodedLocation}&zoom=16&maptype=roadmap`;
-            
-            // Alternative method without API key (uses basic embed)
-            const mapUrlBasic = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.0965896275953!2d105.84167431533321!3d21.00313598600749!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab9bd9861ca1%3A0xe7887f7b72ca17a!2zxJDhuqFpIGjhu41jIELDoWNoIGtob2EgSMOgIE7hu5lp!5e0!3m2!1svi!2svn!4v1627890123456!5m2!1svi!2svn`;
+            try {
+                // Create Google Maps embed URL
+                const encodedLocation = encodeURIComponent(location.trim());
+                // Use basic embed URL that works without API key
+                const mapUrl = `https://maps.google.com/maps?q=${encodedLocation}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 
-            // Set the iframe source
-            document.getElementById('mapIframe').src = mapUrlBasic;
-            document.getElementById('mapContainer').style.display = 'block';
-            
-            // Update UI
-            document.getElementById('statusDot').classList.add('active');
-            document.getElementById('liveLocationSection').classList.add('active');
-            
-            document.getElementById('locationContent').innerHTML = `
-                <div class="success">🟢 Bản đồ đã được chia sẻ!</div>
-                <div style="margin: 10px 0;">
-                    <div style="color: #ffffff;">📍 Vị trí: ${location}</div>
-                    <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
-                        📞 Liên hệ: 0374348370 | ⏰ Cập nhật: ${new Date().toLocaleTimeString('vi-VN')}
+                // Send to server to share with all users
+                const locationData = {
+                    adminKey: adminKey,
+                    isActive: true,
+                    description: location.trim(),
+                    mapUrl: mapUrl,
+                    phone: '0374348370',
+                    note: 'Vị trí được chia sẻ từ admin'
+                };
+
+                const response = await fetch('/api/share-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(locationData)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Update local display immediately
+                    document.getElementById('mapIframe').src = mapUrl;
+                    document.getElementById('mapContainer').style.display = 'block';
+                    document.getElementById('statusDot').classList.add('active');
+                    document.getElementById('liveLocationSection').classList.add('active');
+                    
+                    document.getElementById('locationContent').innerHTML = `
+                        <div class="success">🟢 Bản đồ đã được chia sẻ với tất cả người dùng!</div>
+                        <div style="margin: 10px 0;">
+                            <div style="color: #ffffff;">📍 Vị trí: ${location}</div>
+                            <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
+                                📞 0374348370 | ⏰ Cập nhật: ${new Date().toLocaleTimeString('vi-VN')}
+                            </div>
+                            <div style="color: #ffff00; margin-top: 5px;">🌐 Đã đồng bộ với tất cả người truy cập streamdy.com</div>
+                        </div>
+                    `;
+
+                    isMapVisible = true;
+                    updateLocationStatus('✅ Bản đồ đã được chia sẻ với tất cả người dùng!');
+                    addTerminalMessage('SUCCESS', `🗺️ Bản đồ "${location}" đã được chia sẻ trực tiếp với tất cả người dùng!`);
+                    
+                } else {
+                    throw new Error('Không thể kết nối server để chia sẻ bản đồ');
+                }
+
+            } catch (error) {
+                // Fallback to local display if server fails
+                console.error('Server error:', error);
+                
+                const encodedLocation = encodeURIComponent(location.trim());
+                const mapUrl = `https://maps.google.com/maps?q=${encodedLocation}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+                
+                document.getElementById('mapIframe').src = mapUrl;
+                document.getElementById('mapContainer').style.display = 'block';
+                document.getElementById('statusDot').classList.add('active');
+                document.getElementById('liveLocationSection').classList.add('active');
+                
+                document.getElementById('locationContent').innerHTML = `
+                    <div class="warning">🟡 Bản đồ hiển thị cục bộ (lỗi server)</div>
+                    <div style="margin: 10px 0;">
+                        <div style="color: #ffffff;">📍 Vị trí: ${location}</div>
+                        <div style="color: #ff9900; font-size: 12px; margin-top: 5px;">
+                            ⚠️ Chỉ hiển thị trên thiết bị này - server không khả dụng
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
-            isMapVisible = true;
-            updateLocationStatus('✅ Bản đồ đã được hiển thị thành công!');
-            addTerminalMessage('SUCCESS', `🗺️ Bản đồ "${location}" đã được chia sẻ!`);
+                updateLocationStatus('⚠️ Hiển thị cục bộ - lỗi kết nối server');
+                addTerminalMessage('WARNING', `🗺️ Bản đồ "${location}" chỉ hiển thị cục bộ (lỗi server)`);
+            }
 
             // Scroll to map
             document.getElementById('mapContainer').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function hideMap() {
+        async function hideMap() {
             const adminKey = document.getElementById('adminKey').value;
 
             if (!adminKey) {
@@ -560,26 +666,67 @@
                 return;
             }
 
-            updateLocationStatus('🔄 Đang ẩn bản đồ...');
+            updateLocationStatus('🔄 Đang ẩn bản đồ cho tất cả người dùng...');
 
-            // Hide map
-            document.getElementById('mapContainer').style.display = 'none';
-            document.getElementById('statusDot').classList.remove('active');
-            document.getElementById('liveLocationSection').classList.remove('active');
-            
-            document.getElementById('locationContent').innerHTML = `
-                <div class="warning">🔴 Bản đồ đã được ẩn</div>
-                <div style="color: #888; margin-top: 5px;">
-                    Giới đã dừng chia sẻ vị trí. Hãy gọi điện để biết vị trí chính xác!
-                </div>
-            `;
+            try {
+                // Send to server to hide map for all users
+                const response = await fetch('/api/share-location', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        adminKey: adminKey,
+                        isActive: false,
+                        description: '',
+                        mapUrl: '',
+                        phone: '0374348370',
+                        note: ''
+                    })
+                });
 
-            isMapVisible = false;
-            updateLocationStatus('⏹️ Đã ẩn bản đồ');
-            addTerminalMessage('WARNING', '❌ Bản đồ vị trí đã được ẩn');
+                if (response.ok) {
+                    // Update local display
+                    document.getElementById('mapContainer').style.display = 'none';
+                    document.getElementById('statusDot').classList.remove('active');
+                    document.getElementById('liveLocationSection').classList.remove('active');
+                    
+                    document.getElementById('locationContent').innerHTML = `
+                        <div class="warning">🔴 Bản đồ đã được ẩn khỏi tất cả người dùng</div>
+                        <div style="color: #888; margin-top: 5px;">
+                            Giới đã dừng chia sẻ vị trí. Hãy gọi điện để biết vị trí chính xác!
+                        </div>
+                    `;
+
+                    isMapVisible = false;
+                    updateLocationStatus('⏹️ Đã ẩn bản đồ cho tất cả người dùng');
+                    addTerminalMessage('WARNING', '❌ Bản đồ vị trí đã được ẩn khỏi tất cả người dùng');
+                    
+                } else {
+                    throw new Error('Không thể kết nối server');
+                }
+                
+            } catch (error) {
+                // Fallback to local hide if server fails
+                console.error('Server error:', error);
+                
+                document.getElementById('mapContainer').style.display = 'none';
+                document.getElementById('statusDot').classList.remove('active');
+                document.getElementById('liveLocationSection').classList.remove('active');
+                
+                document.getElementById('locationContent').innerHTML = `
+                    <div class="warning">🟡 Bản đồ ẩn cục bộ (lỗi server)</div>
+                    <div style="color: #ff9900; margin-top: 5px;">
+                        ⚠️ Chỉ ẩn trên thiết bị này - server không khả dụng
+                    </div>
+                `;
+
+                updateLocationStatus('⚠️ Ẩn cục bộ - lỗi kết nối server');
+                addTerminalMessage('WARNING', '❌ Bản đồ chỉ ẩn cục bộ (lỗi server)');
+            }
         }
 
-        function useCurrentLocation() {
+        async function useCurrentLocation() {
             const adminKey = document.getElementById('adminKey').value;
 
             if (!adminKey) {
@@ -595,37 +742,89 @@
             updateLocationStatus('📍 Đang lấy vị trí hiện tại...');
 
             navigator.geolocation.getCurrentPosition(
-                function(position) {
+                async function(position) {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     const accuracy = Math.round(position.coords.accuracy);
 
-                    // Update input with coordinates
-                    document.getElementById('mapLocationInput').value = `${lat},${lng}`;
+                    updateLocationStatus('🔄 Đang chia sẻ vị trí GPS với tất cả người dùng...');
 
-                    // Create map with current location
-                    const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
-                    document.getElementById('mapIframe').src = mapUrl;
-                    document.getElementById('mapContainer').style.display = 'block';
+                    try {
+                        // Create map with current location
+                        const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+                        
+                        // Send to server to share with all users
+                        const locationData = {
+                            adminKey: adminKey,
+                            isActive: true,
+                            description: `Tọa độ GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`,
+                            mapUrl: mapUrl,
+                            phone: '0374348370',
+                            note: `Vị trí GPS trực tiếp (±${accuracy}m)`
+                        };
 
-                    // Update UI
-                    document.getElementById('statusDot').classList.add('active');
-                    document.getElementById('liveLocationSection').classList.add('active');
-                    
-                    document.getElementById('locationContent').innerHTML = `
-                        <div class="success">🟢 Vị trí hiện tại đã được chia sẻ!</div>
-                        <div style="margin: 10px 0;">
-                            <div style="color: #ffffff;">📍 Tọa độ: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
-                            <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
-                                📞 0374348370 | 🎯 Độ chính xác: ~${accuracy}m | ⏰ ${new Date().toLocaleTimeString('vi-VN')}
+                        const response = await fetch('/api/share-location', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(locationData)
+                        });
+
+                        if (response.ok) {
+                            // Update local display
+                            document.getElementById('mapIframe').src = mapUrl;
+                            document.getElementById('mapContainer').style.display = 'block';
+                            document.getElementById('statusDot').classList.add('active');
+                            document.getElementById('liveLocationSection').classList.add('active');
+                            
+                            document.getElementById('locationContent').innerHTML = `
+                                <div class="success">🟢 Vị trí GPS đã được chia sẻ với tất cả người dùng!</div>
+                                <div style="margin: 10px 0;">
+                                    <div style="color: #ffffff;">📍 Tọa độ: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+                                    <div style="color: #00aaff; font-size: 12px; margin-top: 5px;">
+                                        📞 0374348370 | 🎯 Độ chính xác: ~${accuracy}m | ⏰ ${new Date().toLocaleTimeString('vi-VN')}
+                                    </div>
+                                    <div style="color: #ffff00; margin-top: 5px;">🌐 Vị trí GPS trực tiếp - đã đồng bộ với tất cả người dùng</div>
+                                </div>
+                            `;
+
+                            // Also update input field for reference
+                            document.getElementById('mapLocationInput').value = `${lat},${lng}`;
+
+                            isMapVisible = true;
+                            updateLocationStatus('✅ Vị trí GPS đã được chia sẻ với tất cả người dùng!');
+                            addTerminalMessage('SUCCESS', `📍 Vị trí GPS hiện tại đã được chia sẻ trực tiếp với tất cả người dùng (±${accuracy}m)`);
+                            
+                        } else {
+                            throw new Error('Không thể kết nối server để chia sẻ vị trí GPS');
+                        }
+
+                    } catch (error) {
+                        // Fallback to local display if server fails
+                        console.error('Server error:', error);
+                        
+                        const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
+                        document.getElementById('mapIframe').src = mapUrl;
+                        document.getElementById('mapContainer').style.display = 'block';
+                        document.getElementById('statusDot').classList.add('active');
+                        document.getElementById('liveLocationSection').classList.add('active');
+                        
+                        document.getElementById('locationContent').innerHTML = `
+                            <div class="warning">🟡 Vị trí GPS hiển thị cục bộ (lỗi server)</div>
+                            <div style="margin: 10px 0;">
+                                <div style="color: #ffffff;">📍 Tọa độ: ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+                                <div style="color: #ff9900; font-size: 12px; margin-top: 5px;">
+                                    ⚠️ Chỉ hiển thị trên thiết bị này - server không khả dụng
+                                </div>
                             </div>
-                            <div style="color: #ffff00; margin-top: 5px;">💡 Vị trí GPS trực tiếp từ điện thoại</div>
-                        </div>
-                    `;
+                        `;
 
-                    isMapVisible = true;
-                    updateLocationStatus('✅ Đã sử dụng vị trí hiện tại thành công!');
-                    addTerminalMessage('SUCCESS', `📍 Vị trí GPS hiện tại đã được chia sẻ (${accuracy}m accuracy)`);
+                        document.getElementById('mapLocationInput').value = `${lat},${lng}`;
+
+                        updateLocationStatus('⚠️ Hiển thị GPS cục bộ - lỗi kết nối server');
+                        addTerminalMessage('WARNING', `📍 Vị trí GPS chỉ hiển thị cục bộ (lỗi server) - ±${accuracy}m`);
+                    }
 
                     // Scroll to map
                     document.getElementById('mapContainer').scrollIntoView({ behavior: 'smooth' });
